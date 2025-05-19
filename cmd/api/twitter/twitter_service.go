@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"video_scrape_tool/cmd/api/util"
 
 	"github.com/labstack/echo/v4"
 )
@@ -33,7 +34,9 @@ func (t *twitterServiceImpl) Scrape(c echo.Context) error {
 	tweetId := matches[2]
 
 	headers := getGuestToken(tweetUrl)
-	scrapeM3u8Url(tweetId, headers)
+	videoUrl := scrapeM3u8Url(tweetId, headers).URL
+	util.ParseVideoFromUrl(videoUrl)
+
 	return nil
 }
 
