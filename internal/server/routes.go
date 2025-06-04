@@ -8,6 +8,17 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
+var handlers handlerStruct
+
+type handlerStruct struct {
+	TwitterHandler twitter.TwitterHandler
+}
+
+func init() {
+	handlers = handlerStruct{
+		TwitterHandler: twitter.NewTwitterHandler(),
+	}
+}
 func (s *Server) RegisterRoutes() http.Handler {
 	e := echo.New()
 	e.Use(middleware.Logger())
@@ -21,8 +32,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 		MaxAge:           300,
 	}))
 
-	twitterService := twitter.NewService()
-	e.GET("/", twitterService.Scrape)
+	e.GET("/", handlers.TwitterHandler.Scrape)
 
 	return e
 }

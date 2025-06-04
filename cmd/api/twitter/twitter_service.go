@@ -6,28 +6,27 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"regexp"
 	"video_scrape_tool/cmd/api/util"
-
-	"github.com/labstack/echo/v4"
 )
 
 type TwitterService interface {
-	Scrape(c echo.Context) error
+	Scrape(tweetUrl string) (*os.File, error)
 }
+
+var instance TwitterService
 
 type twitterServiceImpl struct{}
 
 func NewService() TwitterService {
-	return &twitterServiceImpl{}
+	if instance == nil {
+		instance = &twitterServiceImpl{}
+	}
+	return instance
 }
 
-func (t *twitterServiceImpl) Scrape(c echo.Context) error {
-	tweetUrl := c.QueryParams().Get("url")
-	if tweetUrl == "" {
-		return c.JSON(http.StatusBadRequest, "url query parameter is required")
-	}
-
+func (t *twitterServiceImpl) Scrape(tweetUrl string) (*os.File, error) {
 	regex := regexp.MustCompile(`https://x.com/(?P<Username>\w*)/status/(?P<TweetId>\d*)`)
 
 	matches := regex.FindStringSubmatch(tweetUrl)
@@ -35,9 +34,13 @@ func (t *twitterServiceImpl) Scrape(c echo.Context) error {
 
 	headers := getGuestToken(tweetUrl)
 	videoUrl := scrapeM3u8Url(tweetId, headers).URL
-	util.ParseVideoFromUrl(videoUrl)
+	file, err := util.ParseVideoFromUrl(videoUrl)
 
-	return nil
+	if err != nil {
+		panic(err)
+	}
+
+	return file, nil
 }
 
 func getGuestToken(tweetUrl string) string {

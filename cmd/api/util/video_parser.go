@@ -1,26 +1,48 @@
 package util
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
 )
 
-func ParseVideo(data []byte) {
-	file, _ := os.Create("video.mp4")
+var tempDir string
+
+func init() {
+	tempDir, err := os.MkdirTemp("", "")
+	if err != nil {
+		fmt.Println("Error creating temp dir")
+		panic(err)
+	}
+	fmt.Printf("Temporary diretory: %s\n", tempDir)
+}
+
+func ParseVideo(data []byte) (*os.File, error) {
+	file, _ := os.CreateTemp(tempDir, "*.mp4")
 	defer file.Close()
 
 	_, err := file.Write(data)
 	if err != nil {
 		panic(err)
 	}
-	file.Sync()
+	err = file.Sync()
+	if err != nil {
+		panic(err)
+	}
+
+	return file, nil
 }
 
-func ParseVideoFromUrl(url string) {
+func ParseVideoFromUrl(url string) (*os.File, error) {
 	data := FetchVideo(url)
-	ParseVideo(data)
+	video, err := ParseVideo(data)
+	if err != nil {
+		panic(err)
+	}
+
+	return video, nil
 }
 
 func FetchVideo(baseUrl string) []byte {
