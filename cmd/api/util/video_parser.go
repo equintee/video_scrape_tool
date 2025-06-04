@@ -20,6 +20,7 @@ func init() {
 }
 
 func ParseVideo(data []byte) (*os.File, error) {
+	//Doesn't create under tempdir, also not deleting video after the function ends.
 	file, _ := os.CreateTemp(tempDir, "*.mp4")
 	defer file.Close()
 
@@ -32,6 +33,7 @@ func ParseVideo(data []byte) (*os.File, error) {
 		panic(err)
 	}
 
+	fmt.Printf("Parsed video file: %s\n", file.Name())
 	return file, nil
 }
 
