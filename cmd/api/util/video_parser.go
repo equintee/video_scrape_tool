@@ -1,8 +1,8 @@
 package util
 
 import (
-	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -13,10 +13,10 @@ var tempDir string
 func init() {
 	tempDir, err := os.MkdirTemp("", "")
 	if err != nil {
-		fmt.Println("Error creating temp dir")
+		log.Println("Error creating temp dir")
 		panic(err)
 	}
-	fmt.Printf("Temporary diretory: %s\n", tempDir)
+	log.Printf("Temporary diretory: %s\n", tempDir)
 }
 
 func ParseVideo(data []byte) (*os.File, error) {
@@ -33,7 +33,7 @@ func ParseVideo(data []byte) (*os.File, error) {
 		panic(err)
 	}
 
-	fmt.Printf("Parsed video file: %s\n", file.Name())
+	log.Printf("Parsed video file: %s\n", file.Name())
 	return file, nil
 }
 

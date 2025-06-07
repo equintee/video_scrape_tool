@@ -32,7 +32,6 @@ func (t Instance) Scrape(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, "url query parameter is required")
 	}
 	filePath, err := t.twitterService.Scrape(tweetUrl)
-
 	if err != nil {
 		c.Error(err)
 	} else {
