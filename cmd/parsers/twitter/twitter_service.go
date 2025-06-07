@@ -8,7 +8,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
-	"video_scrape_tool/cmd/api/util"
+	"video_scrape_tool/cmd/util"
 )
 
 type TwitterService interface {
