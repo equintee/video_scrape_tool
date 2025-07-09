@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+
+	ffmpeg_go "github.com/u2takey/ffmpeg-go"
 )
 
 var tempDir string
@@ -19,7 +21,7 @@ func init() {
 	log.Printf("Temporary diretory: %s\n", tempDir)
 }
 
-func ParseVideo(data []byte) (*os.File, error) {
+func SaveVideo(data []byte) (*os.File, error) {
 	//Doesn't create under tempdir, also not deleting video after the function ends.
 	file, _ := os.CreateTemp(tempDir, "*.mp4")
 	defer file.Close()
@@ -37,9 +39,9 @@ func ParseVideo(data []byte) (*os.File, error) {
 	return file, nil
 }
 
-func ParseVideoFromUrl(url string) (*os.File, error) {
+func SaveVideoFromUrl(url string) (*os.File, error) {
 	data := FetchVideo(url)
-	video, err := ParseVideo(data)
+	video, err := SaveVideo(data)
 	if err != nil {
 		panic(err)
 	}
@@ -64,4 +66,14 @@ func FetchVideo(baseUrl string) []byte {
 	responseData, _ := io.ReadAll(response.Body)
 
 	return responseData
+}
+
+func ExtractAudioFromVideo(file *os.File) ([]byte, error) {
+	filePath := "C:\\Users\\equinte\\AppData\\Local\\Temp\\312159831.mp3"
+	err := ffmpeg_go.Input(file.Name()).Audio().Output(filePath).Run()
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+	return os.ReadFile(filePath)
 }
