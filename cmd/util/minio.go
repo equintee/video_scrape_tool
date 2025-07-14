@@ -5,41 +5,59 @@ import (
 	"errors"
 	"log"
 	"os"
+	"path/filepath"
 
+	"github.com/google/uuid"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 )
 
-var client *minio.Client
+type ContentStorage struct {
+	client *minio.Client
+}
+type ContentStorageInterface interface {
+	CreateBucket(bucketName string)
+	SaveObject(bucketName string, objectName string, filePath string) string
+}
+
+var instance *ContentStorage
+
+func GetInstance() *ContentStorage {
+	return instance
+}
 
 func init() {
 	endpoint := os.Getenv("MINIO_URL")
 	accessKeyID := os.Getenv("MINIO_USERNAME")
 	secretAccessKey := os.Getenv("MINIO_PASSWORD")
 
-	// Initialize minio client object.
+	// Initialize minio database object.
 	minioClient, err := minio.New(endpoint, &minio.Options{
 		Creds: credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
 	})
 	if err != nil {
 		log.Fatalln(err)
 	}
-	client = minioClient
-	log.Printf("Minio connection sucesfull") // minioClient is now set up
+
+	instance = &ContentStorage{
+		client: minioClient,
+	}
+
+	log.Printf("ContentStorage connection sucesfull") // minioClient is now set up
 }
 
-func CreateBucket(bucketName string) {
-	exists, err := client.BucketExists(context.Background(), bucketName)
+func (c *ContentStorage) CreateBucket(bucketName string) {
+	exists, err := c.client.BucketExists(context.Background(), bucketName)
 	if err != nil {
 		log.Fatalln(err)
 	}
 	if !exists {
-		err = client.MakeBucket(context.Background(), bucketName, minio.MakeBucketOptions{})
+		err = c.client.MakeBucket(context.Background(), bucketName, minio.MakeBucketOptions{})
 	}
 }
 
-func SaveObject(bucketName string, objectName string, filePath string) string {
-	exists, err := client.BucketExists(context.Background(), bucketName)
+func (c *ContentStorage) SaveObject(bucketName string, objectName string, filePath string) string {
+	exists, err := c.client.BucketExists(context.Background(), bucketName)
 
 	if err != nil {
 		log.Fatalln(err)
@@ -48,7 +66,13 @@ func SaveObject(bucketName string, objectName string, filePath string) string {
 	if !exists {
 		log.Fatalln(errors.New("Bucket does not exist."))
 	}
-	object, err := client.FPutObject(context.Background(), bucketName, objectName, filePath, minio.PutObjectOptions{})
+
+	if objectName == "" {
+		extension := filepath.Ext(filePath)
+		newUUID, _ := uuid.NewUUID()
+		objectName = newUUID.String() + extension
+	}
+	object, err := c.client.FPutObject(context.Background(), bucketName, objectName, filePath, minio.PutObjectOptions{})
 
 	if err != nil {
 		log.Fatalln("Error uploading file.")

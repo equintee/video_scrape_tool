@@ -1,8 +1,6 @@
 package content_parser
 
 import (
-	"net/http"
-
 	"github.com/labstack/echo/v4"
 )
 
@@ -26,10 +24,6 @@ func NewContentHandler() *Handler {
 }
 
 func (t Handler) Scrape(c echo.Context) error {
-	var request ScrapeRequest
-	if err := c.Bind(&request); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest)
-	}
 	t.service.Scrape(c)
 	return nil
 }

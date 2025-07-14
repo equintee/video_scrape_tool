@@ -32,7 +32,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 		MaxAge:           300,
 	}))
 
-	e.GET("/", handlers.contentHandler.Scrape)
+	e.POST("/", handlers.contentHandler.Scrape)
 
 	return e
 }

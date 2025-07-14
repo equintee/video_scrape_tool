@@ -1,20 +1,20 @@
 package models
 
 import (
-	"github.com/google/uuid"
-	"gorm.io/gorm"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 type Content struct {
-	gorm.Model
-	Id         uuid.UUID `gorm:"primarykey"`
-	Name       string    `gorm:"type:varchar(255)"`
-	ContentUrl string    `gorm:"type:varchar(255)"`
-	Tags       []string  `gorm:"type:varchar(255)"`
-	Song       Song
+	Id          bson.ObjectID `bson:"_id"`
+	Name        string        `bson:"name"`
+	Description string        `bson:"description"`
+	Source      string        `bson:"source"`
+	ContentUrl  string        `bson:"content_url"`
+	Tags        []string      `bson:"tags"`
+	Song        Song
 }
 
 type Song struct {
-	Name   string `gorm:"type:varchar(255)"`
-	Artist string `gorm:"type:varchar(255)"`
+	Name   string `bson:"name"`
+	Artist string `bson:"artist"`
 }

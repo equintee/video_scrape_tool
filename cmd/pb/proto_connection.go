@@ -8,9 +8,9 @@ import (
 var musicRecognitionService MusicRecoginitonServiceClient
 
 func init() {
-	con, err := grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	con, err := grpc.NewClient("localhost:50001", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		return
+		panic(err)
 	}
 	client := NewMusicRecoginitonServiceClient(con)
 	musicRecognitionService = client
