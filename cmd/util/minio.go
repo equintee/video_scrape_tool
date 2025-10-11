@@ -3,6 +3,7 @@ package util
 import (
 	"context"
 	"errors"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -18,6 +19,7 @@ type ContentStorage struct {
 type ContentStorageInterface interface {
 	CreateBucket(bucketName string)
 	SaveObject(bucketName string, objectName string, filePath string) string
+	GetChunk(bucketName string, objectName string, start int64, end int64) (*Chunk, error)
 }
 
 var instance *ContentStorage
@@ -80,4 +82,39 @@ func (c *ContentStorage) SaveObject(bucketName string, objectName string, filePa
 
 	log.Printf("Successfully uploaded %s of size %d\n", objectName, object.Size)
 	return objectName
+}
+
+type Chunk struct {
+	Data  []byte
+	Start int64
+	End   int64
+	Size  int64
+}
+
+func (c *ContentStorage) GetChunk(bucketName string, objectName string, start int64, end int64) (*Chunk, error) {
+	options := minio.GetObjectOptions{}
+	options.SetRange(start, end)
+	object, err := c.client.GetObject(context.TODO(), bucketName, objectName, options)
+	if err != nil {
+		return nil, err
+	}
+	defer object.Close()
+
+	stat, err := object.Stat()
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := io.ReadAll(object)
+	if err != nil {
+		return nil, err
+	}
+
+	var chunk Chunk
+	chunk.Start = start
+	chunk.End = end
+	chunk.Size = stat.Size
+	chunk.Data = data
+
+	return &chunk, nil
 }

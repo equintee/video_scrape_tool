@@ -25,6 +25,7 @@ type ContentDto struct {
 type ContentService interface {
 	Scrape(c echo.Context) error
 	GetContent(c echo.Context) error
+	GetContentChunk(c echo.Context) ([]byte, error)
 }
 
 type Service struct {
@@ -172,6 +173,11 @@ func (s *Service) GetContent(c echo.Context) error {
 
 	c.JSON(200, contents)
 	return nil
+}
+
+func (s *Service) GetContentChunk(c echo.Context) ([]byte, error) {
+	//TODO: Implement
+	return nil, nil
 }
 
 func (s *Service) findSong(file *os.File) models.Song {
