@@ -13,6 +13,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 type ContentDto struct {
@@ -20,16 +21,10 @@ type ContentDto struct {
 	Song    models.Song
 	Request ScrapeRequest
 }
-type ScrapeRequest struct {
-	Name        string   `json:"name"`
-	Description string   `json:"description"`
-	Tags        []string `json:"tags"`
-	Source      string   `json:"source"`
-	Type        string   `json:"type"`
-}
 
 type ContentService interface {
 	Scrape(c echo.Context) error
+	GetContent(c echo.Context) error
 }
 
 type Service struct {
@@ -50,6 +45,14 @@ func NewService() *Service {
 	}
 	instance.minio.CreateBucket(instance.bucketName)
 	return instance
+}
+
+type ScrapeRequest struct {
+	Name        string   `json:"name"`
+	Description string   `json:"description"`
+	Tags        []string `json:"tags"`
+	Source      string   `json:"source"`
+	Type        string   `json:"type"`
 }
 
 func (s *Service) Scrape(c echo.Context) error {
@@ -91,6 +94,83 @@ func (s *Service) Scrape(c echo.Context) error {
 	}
 
 	c.JSON(200, entity)
+	return nil
+}
+
+type GetContentRequest struct {
+	Name        string   `json:"name"`
+	Description string   `json:"description"`
+	Tags        []string `json:"tags"`
+	Source      string   `json:"source"`
+	Type        string   `json:"type"`
+	PageSize    int      `json:"page_size" minimum:"1"`
+	PageNum     int      `json:"page_num" minimum:"1"`
+}
+
+type ContentResponse struct {
+	Id          string      `json:"id"`
+	Name        string      `json:"name"`
+	Description string      `json:"description"`
+	Tags        []string    `json:"tags"`
+	ContentUrl  string      `json:"content_url" bson:"content_url"`
+	Type        string      `json:"type"`
+	Song        models.Song `json:"song"`
+}
+
+func (s *Service) GetContent(c echo.Context) error {
+	var request GetContentRequest
+	if err := c.Bind(&request); err != nil {
+		c.JSON(400, err)
+		return nil
+	}
+
+	filters := []bson.M{}
+
+	if request.Name != "" {
+		filters = append(filters, bson.M{"name": request.Name})
+	}
+	if request.Description != "" {
+		filters = append(filters, bson.M{"description": request.Description})
+	}
+
+	if request.Tags != nil {
+		filters = append(filters, bson.M{"tags": bson.M{"$in": request.Tags}})
+	}
+
+	if request.Source != "" {
+		filters = append(filters, bson.M{"source": request.Source})
+	}
+
+	if request.Type != "" {
+		filters = append(filters, bson.M{"type": request.Type})
+	}
+
+	var filter bson.M
+	if len(filters) > 0 {
+		filter = bson.M{"$and": filters}
+	} else {
+		filter = bson.M{}
+	}
+
+	skip := int64(request.PageSize * (request.PageNum - 1))
+	limit := int64(request.PageNum)
+	findOptions := options.Find().SetSkip(skip).SetLimit(limit)
+	result, err := s.collection.Find(context.TODO(), filter, findOptions)
+	if err != nil {
+		return err
+	}
+
+	var contents []ContentResponse
+	err = result.All(context.Background(), &contents)
+	if err != nil {
+		return err
+	}
+
+	if contents == nil {
+		contents = []ContentResponse{}
+	}
+
+	c.JSON(200, contents)
 	return nil
 }
 

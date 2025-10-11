@@ -33,6 +33,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	}))
 
 	e.POST("/", handlers.contentHandler.Scrape)
+	e.GET("/", handlers.contentHandler.GetContent)
 
 	return e
 }

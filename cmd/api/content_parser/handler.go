@@ -6,6 +6,7 @@ import (
 
 type ContentHandler interface {
 	Scrape(c echo.Context) error
+	GetContent(c echo.Context) error
 }
 
 type Handler struct {
@@ -25,5 +26,10 @@ func NewContentHandler() *Handler {
 
 func (t Handler) Scrape(c echo.Context) error {
 	t.service.Scrape(c)
+	return nil
+}
+
+func (t Handler) GetContent(c echo.Context) error {
+	t.service.GetContent(c)
 	return nil
 }
