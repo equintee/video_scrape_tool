@@ -100,20 +100,20 @@ func (c *ContentStorage) GetChunk(bucketName string, objectName string, start in
 	}
 	defer object.Close()
 
-	stat, err := object.Stat()
+	data, err := io.ReadAll(object)
 	if err != nil {
 		return nil, err
 	}
-
-	data, err := io.ReadAll(object)
+	stat, err := c.client.GetObject(context.TODO(), bucketName, objectName, options)
+	size, err := stat.Stat()
 	if err != nil {
 		return nil, err
 	}
 
 	var chunk Chunk
 	chunk.Start = start
-	chunk.End = end
-	chunk.Size = stat.Size
+	chunk.End = min(end, size.Size-1)
+	chunk.Size = size.Size
 	chunk.Data = data
 
 	return &chunk, nil

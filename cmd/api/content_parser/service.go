@@ -1,9 +1,12 @@
 package content_parser
 
 import (
+	"bytes"
 	"context"
 	"log"
 	"os"
+	"strconv"
+	"strings"
 	"video_scrape_tool/cmd/api/models"
 	"video_scrape_tool/cmd/parsers/twitter"
 	pb "video_scrape_tool/cmd/pb"
@@ -24,7 +27,7 @@ type ContentDto struct {
 
 type ContentService interface {
 	Scrape(c echo.Context) error
-	GetContent(c echo.Context) error
+	GetContentMetaData(c echo.Context) error
 	GetContentChunk(c echo.Context) ([]byte, error)
 }
 
@@ -118,7 +121,7 @@ type ContentResponse struct {
 	Song        models.Song `json:"song"`
 }
 
-func (s *Service) GetContent(c echo.Context) error {
+func (s *Service) GetContentMetaData(c echo.Context) error {
 	var request GetContentRequest
 	if err := c.Bind(&request); err != nil {
 		c.JSON(400, err)
@@ -176,8 +179,25 @@ func (s *Service) GetContent(c echo.Context) error {
 }
 
 func (s *Service) GetContentChunk(c echo.Context) ([]byte, error) {
-	//TODO: Implement
-	return nil, nil
+	contentId := c.QueryParam("contentId")
+	rangeHeader := c.Request().Header.Get("Range")
+	rangeHeader = strings.ReplaceAll(rangeHeader, "bytes=", "")
+	split := strings.Split(rangeHeader, "-")
+
+	start, err := strconv.ParseInt(split[0], 10, 64)
+	var end int64
+	end = start + 100000
+	if split[1] != "" {
+		end, err = strconv.ParseInt(split[1], 10, 64)
+	}
+
+	chunk, err := s.minio.GetChunk(s.bucketName, contentId, start, end)
+	response := c.Response()
+	response.Status = 206
+	contentRange := "bytes " + strconv.FormatInt(chunk.Start, 10) + "-" + strconv.FormatInt(chunk.End, 10) + "/" + strconv.FormatInt(chunk.Size, 10)
+	response.Header().Set("Content-Range", contentRange)
+	c.Stream(206, "video/mp4", bytes.NewReader(chunk.Data))
+	return chunk.Data, err
 }
 
 func (s *Service) findSong(file *os.File) models.Song {

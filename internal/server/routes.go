@@ -34,6 +34,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	e.POST("/", handlers.contentHandler.Scrape)
 	e.GET("/", handlers.contentHandler.GetContent)
+	e.GET("/chunk", handlers.contentHandler.GetContentChunk)
 
 	return e
 }
