@@ -12,6 +12,7 @@ import (
 	pb "video_scrape_tool/cmd/pb"
 	"video_scrape_tool/cmd/util"
 
+	"github.com/gorilla/schema"
 	"github.com/jinzhu/copier"
 	"github.com/labstack/echo/v4"
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -97,7 +98,10 @@ func (s *Service) Scrape(c echo.Context) error {
 		return err
 	}
 
-	c.JSON(200, entity)
+	if err = c.JSON(200, entity); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -123,18 +127,18 @@ type ContentResponse struct {
 
 func (s *Service) GetContentMetaData(c echo.Context) error {
 	var request GetContentRequest
-	if err := c.Bind(&request); err != nil {
+	decoder := schema.NewDecoder()
+	if err := decoder.Decode(&request, c.QueryParams()); err != nil {
 		c.JSON(400, err)
-		return nil
+		return err
 	}
-
-	filters := []bson.M{}
+	var filters []bson.M
 
 	if request.Name != "" {
-		filters = append(filters, bson.M{"name": request.Name})
+		filters = append(filters, bson.M{"name": bson.M{"$regex": request.Name, "$options": "i"}})
 	}
 	if request.Description != "" {
-		filters = append(filters, bson.M{"description": request.Description})
+		filters = append(filters, bson.M{"description": bson.M{"$regex": request.Description, "$options": "i"}})
 	}
 
 	if request.Tags != nil {
@@ -174,7 +178,10 @@ func (s *Service) GetContentMetaData(c echo.Context) error {
 		contents = []ContentResponse{}
 	}
 
-	c.JSON(200, contents)
+	if err = c.JSON(200, contents); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -192,11 +199,19 @@ func (s *Service) GetContentChunk(c echo.Context) ([]byte, error) {
 	}
 
 	chunk, err := s.minio.GetChunk(s.bucketName, contentId, start, end)
+	if err != nil {
+		c.Response().Status = 204
+		return nil, err
+	}
+
 	response := c.Response()
 	response.Status = 206
 	contentRange := "bytes " + strconv.FormatInt(chunk.Start, 10) + "-" + strconv.FormatInt(chunk.End, 10) + "/" + strconv.FormatInt(chunk.Size, 10)
 	response.Header().Set("Content-Range", contentRange)
-	c.Stream(206, "video/mp4", bytes.NewReader(chunk.Data))
+
+	if err = c.Stream(206, "video/mp4", bytes.NewReader(chunk.Data)); err != nil {
+		return nil, err
+	}
 	return chunk.Data, err
 }
 
