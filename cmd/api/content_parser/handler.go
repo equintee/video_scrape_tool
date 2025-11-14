@@ -8,6 +8,7 @@ type ContentHandler interface {
 	Scrape(c echo.Context) error
 	GetContent(c echo.Context) error
 	GetContentChunk(c echo.Context) error
+	GetTags(c echo.Context) error
 }
 
 type Handler struct {
@@ -37,5 +38,10 @@ func (t Handler) GetContent(c echo.Context) error {
 
 func (t Handler) GetContentChunk(c echo.Context) error {
 	t.service.GetContentChunk(c)
+	return nil
+}
+
+func (t Handler) GetTags(c echo.Context) error {
+	t.service.GetTags(c)
 	return nil
 }

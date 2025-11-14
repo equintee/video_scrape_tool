@@ -30,6 +30,7 @@ type ContentService interface {
 	Scrape(c echo.Context) error
 	GetContentMetaData(c echo.Context) error
 	GetContentChunk(c echo.Context) ([]byte, error)
+	GetTags(c echo.Context) ([]string, error)
 }
 
 type Service struct {
@@ -234,4 +235,12 @@ func (s *Service) findSong(file *os.File) models.Song {
 		Name:   song.SongName,
 		Artist: song.Artist,
 	}
+}
+
+func (s *Service) GetTags(c echo.Context) ([]string, error) {
+	var tags []string
+	s.collection.Distinct(context.Background(), "tags", bson.D{}).Decode(&tags)
+	c.JSON(200, tags)
+
+	return tags, nil
 }
