@@ -142,7 +142,7 @@ func (s *Service) GetContentMetaData(c echo.Context) error {
 		filters = append(filters, bson.M{"description": bson.M{"$regex": request.Description, "$options": "i"}})
 	}
 
-	if request.Tags != nil {
+	if request.Tags != nil && len(request.Tags) > 0 {
 		filters = append(filters, bson.M{"tags": bson.M{"$in": request.Tags}})
 	}
 
