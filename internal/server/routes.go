@@ -33,6 +33,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	}))
 
 	e.POST("/", handlers.contentHandler.Scrape)
+	e.PATCH("/", handlers.contentHandler.UpdateContent)
 	e.GET("/", handlers.contentHandler.GetContent)
 	e.GET("/tags", handlers.contentHandler.GetTags)
 	e.GET("/chunk", handlers.contentHandler.GetContentChunk)

@@ -6,6 +6,7 @@ import (
 
 type ContentHandler interface {
 	Scrape(c echo.Context) error
+	UpdateContent(c echo.Context) error
 	GetContent(c echo.Context) error
 	GetContentChunk(c echo.Context) error
 	GetTags(c echo.Context) error
@@ -28,6 +29,11 @@ func NewContentHandler() *Handler {
 
 func (t Handler) Scrape(c echo.Context) error {
 	t.service.Scrape(c)
+	return nil
+}
+
+func (t Handler) UpdateContent(c echo.Context) error {
+	t.service.UpdateContent(c)
 	return nil
 }
 

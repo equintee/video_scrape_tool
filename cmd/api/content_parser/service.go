@@ -28,6 +28,7 @@ type ContentDto struct {
 
 type ContentService interface {
 	Scrape(c echo.Context) error
+	UpdateContent(c echo.Context) error
 	GetContentMetaData(c echo.Context) error
 	GetContentChunk(c echo.Context) ([]byte, error)
 	GetTags(c echo.Context) ([]string, error)
@@ -117,13 +118,18 @@ type GetContentRequest struct {
 }
 
 type ContentResponse struct {
-	Id          string      `json:"id"`
-	Name        string      `json:"name"`
-	Description string      `json:"description"`
-	Tags        []string    `json:"tags"`
-	ContentUrl  string      `json:"content_url" bson:"content_url"`
-	Type        string      `json:"type"`
-	Song        models.Song `json:"song"`
+	Id          bson.ObjectID `json:"id" bson:"_id"`
+	Name        string        `json:"name"`
+	Description string        `json:"description"`
+	Tags        []string      `json:"tags"`
+	ContentUrl  string        `json:"content_url" bson:"content_url"`
+	Type        string        `json:"type"`
+	Song        SongDto       `json:"song"`
+}
+
+type SongDto struct {
+	Name   string `json:"name"`
+	Artist string `json:"artist"`
 }
 
 func (s *Service) GetContentMetaData(c echo.Context) error {
@@ -243,4 +249,35 @@ func (s *Service) GetTags(c echo.Context) ([]string, error) {
 	c.JSON(200, tags)
 
 	return tags, nil
+}
+
+type UpdateRequest struct {
+	Id          string   `json:"id"`
+	Name        string   `json:"name"`
+	Description string   `json:"description"`
+	Tags        []string `json:"tags"`
+}
+
+func (s *Service) UpdateContent(c echo.Context) error {
+	var request UpdateRequest
+	if err := c.Bind(&request); err != nil {
+		c.JSON(400, err)
+		return err
+	}
+
+	hex, _ := bson.ObjectIDFromHex(request.Id)
+	cursor := s.collection.FindOne(context.Background(), bson.M{"_id": hex})
+	if err := cursor.Err(); err != nil {
+		c.JSON(422, "Content not found.")
+	}
+	var entity models.Content
+	cursor.Decode(&entity)
+	if err := copier.Copy(&entity, &request); err != nil {
+		c.JSON(400, err)
+	}
+
+	fff := util.GenerateUpdate(entity, request)
+	update := s.collection.FindOneAndUpdate(context.Background(), bson.M{"_id": hex}, bson.M{"$set": fff})
+	c.JSON(200, update)
+	return nil
 }
