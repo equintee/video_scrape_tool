@@ -276,8 +276,8 @@ func (s *Service) UpdateContent(c echo.Context) error {
 		c.JSON(400, err)
 	}
 
-	fff := util.GenerateUpdate(entity, request)
-	update := s.collection.FindOneAndUpdate(context.Background(), bson.M{"_id": hex}, bson.M{"$set": fff})
+	copier.Copy(&entity, &request)
+	update, _ := s.collection.ReplaceOne(context.Background(), bson.M{"_id": hex}, entity)
 	c.JSON(200, update)
 	return nil
 }
