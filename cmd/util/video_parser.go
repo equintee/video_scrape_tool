@@ -7,13 +7,15 @@ import (
 	"net/url"
 	"os"
 
+	"github.com/google/uuid"
 	ffmpeg_go "github.com/u2takey/ffmpeg-go"
 )
 
 var tempDir string
 
 func init() {
-	tempDir, err := os.MkdirTemp("", "")
+	var err error
+	tempDir, err = os.MkdirTemp("", "")
 	if err != nil {
 		log.Println("Error creating temp dir")
 		panic(err)
@@ -69,7 +71,7 @@ func FetchVideo(baseUrl string) []byte {
 }
 
 func ExtractAudioFromVideo(file *os.File) ([]byte, error) {
-	filePath := "C:\\Users\\equinte\\AppData\\Local\\Temp\\312159831.mp3"
+	filePath := tempDir + "/" + uuid.NewString() + ".mp3"
 	err := ffmpeg_go.Input(file.Name()).Audio().Output(filePath).Run()
 	if err != nil {
 		return nil, err
