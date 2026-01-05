@@ -31,7 +31,7 @@ type ContentService interface {
 	UpdateContent(c echo.Context) error
 	GetContentMetaData(c echo.Context) error
 	GetContentChunk(c echo.Context) ([]byte, error)
-	GetTags(c echo.Context) ([]string, error)
+	GetFilters(c echo.Context) (FiltersResponse, error)
 }
 
 type Service struct {
@@ -69,8 +69,11 @@ func (s *Service) Scrape(c echo.Context) error {
 		return nil
 	}
 
-	var content ContentDto
+	if request.Tags == nil {
+		request.Tags = make([]string, 0)
+	}
 
+	var content ContentDto
 	switch request.Type {
 	case "twitter":
 		content.File, _ = s.twitterService.Scrape(request.Source)
@@ -100,7 +103,9 @@ func (s *Service) Scrape(c echo.Context) error {
 		return err
 	}
 
-	if err = c.JSON(200, entity); err != nil {
+	var response ContentResponse
+	copier.Copy(&response, &entity)
+	if err = c.JSON(200, response); err != nil {
 		return err
 	}
 
@@ -113,6 +118,7 @@ type GetContentRequest struct {
 	Tags        []string `json:"tags"`
 	Source      string   `json:"source"`
 	Type        string   `json:"type"`
+	Songs       []string `json:"song"`
 	PageSize    int      `json:"page_size" minimum:"1"`
 	PageNum     int      `json:"page_num" minimum:"1"`
 }
@@ -148,7 +154,7 @@ func (s *Service) GetContentMetaData(c echo.Context) error {
 		filters = append(filters, bson.M{"description": bson.M{"$regex": request.Description, "$options": "i"}})
 	}
 
-	if request.Tags != nil && len(request.Tags) > 0 {
+	if len(request.Tags) > 0 {
 		filters = append(filters, bson.M{"tags": bson.M{"$in": request.Tags}})
 	}
 
@@ -158,6 +164,10 @@ func (s *Service) GetContentMetaData(c echo.Context) error {
 
 	if request.Type != "" {
 		filters = append(filters, bson.M{"type": request.Type})
+	}
+
+	if len(request.Songs) > 0 {
+		filters = append(filters, bson.M{"song.name": bson.M{"$in": request.Songs}})
 	}
 
 	var filter bson.M
@@ -243,12 +253,25 @@ func (s *Service) findSong(file *os.File) models.Song {
 	}
 }
 
-func (s *Service) GetTags(c echo.Context) ([]string, error) {
+type FiltersResponse struct {
+	Tags  []string `json:"tags"`
+	Songs []string `json:"songs"`
+}
+
+func (s *Service) GetFilters(c echo.Context) (FiltersResponse, error) {
 	var tags []string
 	s.collection.Distinct(context.Background(), "tags", bson.D{}).Decode(&tags)
-	c.JSON(200, tags)
 
-	return tags, nil
+	var songs []string
+	s.collection.Distinct(context.Background(), "song.name", bson.D{}).Decode(&songs)
+
+	response := &FiltersResponse{
+		Tags:  tags,
+		Songs: songs,
+	}
+	c.JSON(200, response)
+
+	return *response, nil
 }
 
 type UpdateRequest struct {

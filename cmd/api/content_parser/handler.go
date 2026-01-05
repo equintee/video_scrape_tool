@@ -9,7 +9,7 @@ type ContentHandler interface {
 	UpdateContent(c echo.Context) error
 	GetContent(c echo.Context) error
 	GetContentChunk(c echo.Context) error
-	GetTags(c echo.Context) error
+	GetFilters(c echo.Context) error
 }
 
 type Handler struct {
@@ -47,7 +47,7 @@ func (t Handler) GetContentChunk(c echo.Context) error {
 	return nil
 }
 
-func (t Handler) GetTags(c echo.Context) error {
-	t.service.GetTags(c)
+func (t Handler) GetFilters(c echo.Context) error {
+	t.service.GetFilters(c)
 	return nil
 }
