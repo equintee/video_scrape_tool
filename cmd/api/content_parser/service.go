@@ -155,7 +155,7 @@ func (s *Service) GetContentMetaData(c echo.Context) error {
 	}
 
 	if len(request.Tags) > 0 {
-		filters = append(filters, bson.M{"tags": bson.M{"$in": request.Tags}})
+		filters = append(filters, bson.M{"tags": bson.M{"$all": request.Tags}})
 	}
 
 	if request.Source != "" {

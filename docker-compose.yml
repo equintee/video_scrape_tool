@@ -1,0 +1,35 @@
+services:
+  fe:
+    image: frontend
+    ports:
+      - "3000:3000"
+  be:
+    image: backend
+    ports:
+      - "8080:8080"
+    environment:
+      - MINIO_URL=minio:9000
+      - MINIO_USERNAME=admin
+      - MINIO_PASSWORD=password
+      - MONGO_CONNECTION_URI=mongodb://mongo:27017
+  mongo:
+    image: mongo:noble
+    ports:
+      - "27017:27017"
+    volumes:
+      - "C:\\Volumes\\mongo:/data/db"
+  minio:
+    image: minio/minio
+    environment:
+      - MINIO_ROOT_PASSWORD=password
+      - MINIO_ROOT_USER=admin
+    ports:
+      - "9001:9001"
+    volumes:
+      - "C:\\Volumes\\minio:/data"
+    command: server "/mnt/data" --console-address=:9001
+  
+  shazam-api:
+    image: shazam-api
+    ports:
+      - "50001:50001"

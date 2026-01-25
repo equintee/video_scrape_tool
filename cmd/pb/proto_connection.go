@@ -8,7 +8,7 @@ import (
 var musicRecognitionService MusicRecoginitonServiceClient
 
 func init() {
-	con, err := grpc.NewClient("localhost:50001", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	con, err := grpc.NewClient("shazam-api:50001", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		panic(err)
 	}

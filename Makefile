@@ -5,8 +5,7 @@ all: build test
 
 build:
 	@echo "Building..."
-	
-	
+	@protoc --go_out=./cmd/pb/ --go-grpc_out=./cmd/pb/ ./cmd/pb/*.proto
 	@go build -o main.exe cmd/api/main.go
 
 # Run the application
